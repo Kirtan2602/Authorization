@@ -288,6 +288,3 @@ Example Response:
 
 ---
 
-## License
-
-MIT License
