@@ -1,10 +1,19 @@
 import express from "express";
+import { register, login } from "../controller/userController.js";
+import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-import { register, login } from "../controller/userController.js";
-
+// public routes
 router.post("/register", register);
 router.post("/login", login);
 
-export default router;   
+// protected route
+router.get("/profile", authMiddleware, (req, res) => {
+    res.json({
+        message: "Welcome to profile",
+        user: req.user
+    });
+});
+
+export default router;
