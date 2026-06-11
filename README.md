@@ -136,7 +136,7 @@ npm start
 Server runs on:
 
 ```text
-http://localhost:8081
+http://localhost:3000
 ```
 
 ---

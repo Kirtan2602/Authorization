@@ -3,8 +3,8 @@ import sequelize from "../db/dbconnection.js";
 
 const User = sequelize.define("User", {
   name: {
-    type: DataTypes.STRING,
-    allowNull: false,
+  type: DataTypes.STRING,
+  allowNull: false,
   },
   email: {
     type: DataTypes.STRING,
