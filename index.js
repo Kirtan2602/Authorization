@@ -3,7 +3,6 @@ import sequelize from "./db/dbconnection.js";
 import userRoutes from "./routes/userRoutes.js";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
-import authRoutes from "./routes/authRoutes.js";
 
 dotenv.config();
 
@@ -12,7 +11,6 @@ dotenv.config();
 const app = express();
 app.use(cookieParser());
 app.use(express.json());
-app.use("/api/auth", authRoutes);
 
 // routes
 app.use("/api", userRoutes);

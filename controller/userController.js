@@ -2,6 +2,8 @@ import User from "../model/userModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import redisClient from "../redis.js";
+import crypto from "crypto";
+import { Op } from "sequelize";
 
 // TOKEN GENERATORS
 
@@ -19,6 +21,10 @@ const generateRefreshToken = (user) => {
         process.env.REFRESH_SECRET,
         { expiresIn: "7d" }
     );
+};
+
+const hashResetToken = (token) => {
+    return crypto.createHash("sha256").update(token).digest("hex");
 };
 
 // REGISTER
@@ -156,5 +162,90 @@ export const logout = async (req, res) => {
 
     } catch (error) {
         res.status(500).json({ message: "Logout error" });
+    }
+};
+
+// FORGOT PASSWORD
+
+export const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
+        }
+
+        const user = await User.findOne({ where: { email } });
+
+        if (!user) {
+            return res.status(200).json({
+                message: "If this email exists, a password reset token has been generated",
+            });
+        }
+
+        const resetToken = crypto.randomBytes(32).toString("hex");
+
+        user.resetPasswordToken = hashResetToken(resetToken);
+        user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000);
+        await user.save();
+
+        res.status(200).json({
+            message: "Password reset token generated",
+            resetToken,
+            expiresIn: "15m",
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// RESET PASSWORD
+
+export const resetPassword = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const { password } = req.body;
+
+        if (!token) {
+            return res.status(400).json({ message: "Reset token is required" });
+        }
+
+        if (!password || password.length < 6) {
+            return res.status(400).json({
+                message: "Password must be at least 6 characters",
+            });
+        }
+
+        const hashedToken = hashResetToken(token);
+
+        const user = await User.findOne({
+            where: {
+                resetPasswordToken: hashedToken,
+                resetPasswordExpires: {
+                    [Op.gt]: new Date(),
+                },
+            },
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                message: "Invalid or expired reset token",
+            });
+        }
+
+        user.password = await bcrypt.hash(password, 10);
+        user.resetPasswordToken = null;
+        user.resetPasswordExpires = null;
+        await user.save();
+
+        try {
+            await redisClient.del(`refresh_${user.id}`);
+        } catch (err) { }
+
+        res.status(200).json({
+            message: "Password reset successful",
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 };
