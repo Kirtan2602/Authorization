@@ -1,6 +1,7 @@
 import express from "express";
 import sequelize from "./db/dbconnection.js";
 import userRoutes from "./routes/userRoutes.js";
+import weatherRoutes from "./routes/weatherRoutes.js";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 
@@ -14,6 +15,7 @@ app.use(express.json());
 
 // routes
 app.use("/api", userRoutes);
+app.use("/api", weatherRoutes);
 console.log("JWT_SECRET:", process.env.JWT_SECRET);
 // connect DB + start server
 sequelize
